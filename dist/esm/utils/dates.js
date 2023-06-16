@@ -3,16 +3,19 @@ import { defaults } from "../types/options";
 import { english } from "../l10n/default";
 export var createDateFormatter = function (_a) {
     var _b = _a.config, config = _b === void 0 ? defaults : _b, _c = _a.l10n, l10n = _c === void 0 ? english : _c, _d = _a.isMobile, isMobile = _d === void 0 ? false : _d;
-    return function (dateObj, frmt, overrideLocale) {
+    return function (dateObj, format, overrideLocale, overrideFormatSecondsPrecision) {
         var locale = overrideLocale || l10n;
+        var formatSecondsPrecision = overrideFormatSecondsPrecision || config.formatSecondsPrecision || 0;
         if (config.formatDate !== undefined && !isMobile) {
-            return config.formatDate(dateObj, frmt, locale);
+            return config.formatDate(dateObj, format, locale, formatSecondsPrecision);
         }
-        return frmt
+        return format
             .split("")
             .map(function (c, i, arr) {
             return formats[c] && arr[i - 1] !== "\\"
-                ? formats[c](dateObj, locale, config)
+                ? c === "W"
+                    ? function (date) { return "" + config.getWeek(date); }
+                    : formats[c](dateObj, locale, formatSecondsPrecision)
                 : c !== "\\"
                     ? c
                     : "";
@@ -22,33 +25,37 @@ export var createDateFormatter = function (_a) {
 };
 export var createDateParser = function (_a) {
     var _b = _a.config, config = _b === void 0 ? defaults : _b, _c = _a.l10n, l10n = _c === void 0 ? english : _c;
-    return function (date, givenFormat, timeless, customLocale) {
+    return function (date, givenFormat, timeless, overrideLocale) {
+        if (timeless === void 0) { timeless = false; }
         if (date !== 0 && !date)
             return undefined;
-        var locale = customLocale || l10n;
+        var format = givenFormat || config.dateFormat;
+        var locale = overrideLocale || l10n;
         var parsedDate;
         var dateOrig = date;
-        if (date instanceof Date)
-            parsedDate = new Date(date.getTime());
-        else if (typeof date !== "string" &&
-            date.toFixed !== undefined)
-            parsedDate = new Date(date);
-        else if (typeof date === "string") {
-            var format = givenFormat || (config || defaults).dateFormat;
+        if (typeof date !== "string" &&
+            !(date instanceof Date) &&
+            date.toFixed !== undefined) {
+            date = new Date(date);
+        }
+        if (date instanceof Date) {
+            date = createDateFormatter({ config: config, l10n: l10n })(date, format, locale);
+        }
+        if (typeof date === "string") {
             var datestr = String(date).trim();
             if (datestr === "today") {
                 parsedDate = new Date();
                 timeless = true;
             }
-            else if (config && config.parseDate) {
-                parsedDate = config.parseDate(date, format);
+            else if (config.parseDate) {
+                parsedDate = config.parseDate(date, format, timeless, locale);
             }
             else if (/Z$/.test(datestr) ||
                 /GMT$/.test(datestr)) {
                 parsedDate = new Date(date);
             }
             else {
-                var matched = void 0, ops = [];
+                var matched = false, ops = [];
                 for (var i = 0, matchIndex = 0, regexStr = ""; i < format.length; i++) {
                     var token = format[i];
                     var isBackSlash = token === "\\";
@@ -56,7 +63,8 @@ export var createDateParser = function (_a) {
                     if (tokenRegex[token] && !escaped) {
                         regexStr += tokenRegex[token];
                         var match = new RegExp(regexStr).exec(date);
-                        if (match && (matched = true)) {
+                        if (match) {
+                            matched = true;
                             ops[token !== "Y" ? "push" : "unshift"]({
                                 fn: revFormat[token],
                                 val: match[++matchIndex],
@@ -81,9 +89,9 @@ export var createDateParser = function (_a) {
             config.errorHandler(new Error("Invalid date provided: " + dateOrig));
             return undefined;
         }
-        if (timeless === true)
-            parsedDate.setHours(0, 0, 0, 0);
-        return parsedDate;
+        return timeless === true
+            ? new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate())
+            : parsedDate;
     };
 };
 export function compareDates(date1, date2, timeless) {

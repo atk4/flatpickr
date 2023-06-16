@@ -123,12 +123,14 @@ function FlatpickrInstance(element, instanceConfig) {
     }
     function updateTime(e) {
         if (self.selectedDates.length === 0) {
+            var now = new Date();
             var defaultDate = self.config.minDate === undefined ||
-                compareDates(new Date(), self.config.minDate) >= 0
-                ? new Date()
+                compareDates(now, self.config.minDate) >= 0
+                ? now
                 : new Date(self.config.minDate.getTime());
+            defaultDate.setMilliseconds(0);
             var defaults = getDefaultHours(self.config);
-            defaultDate.setHours(defaults.hours, defaults.minutes, defaults.seconds, defaultDate.getMilliseconds());
+            defaultDate.setHours(defaults.hours, defaults.minutes, defaults.seconds);
             self.selectedDates = [defaultDate];
             self.latestSelectedDateObj = defaultDate;
         }
@@ -210,7 +212,7 @@ function FlatpickrInstance(element, instanceConfig) {
                     seconds = Math.max(seconds, minTime.getSeconds());
             }
         }
-        setHours(hours, minutes, seconds);
+        setHours(hours, minutes, self.secondElement !== undefined ? seconds : null);
     }
     function setHoursFromDate(dateObj) {
         var date = dateObj || self.latestSelectedDateObj;
@@ -220,7 +222,21 @@ function FlatpickrInstance(element, instanceConfig) {
     }
     function setHours(hours, minutes, seconds) {
         if (self.latestSelectedDateObj !== undefined) {
-            self.latestSelectedDateObj.setHours(hours % 24, minutes, seconds || 0, 0);
+            var origHours = self.latestSelectedDateObj.getHours();
+            var origMinutes = self.latestSelectedDateObj.getMinutes();
+            var origSeconds = self.latestSelectedDateObj.getSeconds();
+            self.latestSelectedDateObj.setHours(hours % 24, minutes, seconds !== null ? seconds : self.latestSelectedDateObj.getSeconds(), self.latestSelectedDateObj.getMilliseconds());
+            if (origHours !== self.latestSelectedDateObj.getHours() ||
+                origMinutes !== self.latestSelectedDateObj.getMinutes() ||
+                origSeconds !== self.latestSelectedDateObj.getSeconds()) {
+                if (seconds === null) {
+                    self.latestSelectedDateObj.setSeconds(0);
+                }
+                self.latestSelectedDateObj.setMilliseconds(0);
+                if (self.latestSelectedDateObj.flatpickrNanoseconds !== undefined) {
+                    delete self.latestSelectedDateObj.flatpickrNanoseconds;
+                }
+            }
         }
         if (!self.hourElement || !self.minuteElement || self.isMobile)
             return;
@@ -230,7 +246,7 @@ function FlatpickrInstance(element, instanceConfig) {
         self.minuteElement.value = pad(minutes);
         if (self.amPM !== undefined)
             self.amPM.textContent = self.l10n.amPM[int(hours >= 12)];
-        if (self.secondElement !== undefined)
+        if (self.secondElement !== undefined && seconds !== null)
             self.secondElement.value = pad(seconds);
     }
     function onYearInput(event) {

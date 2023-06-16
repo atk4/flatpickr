@@ -37,6 +37,7 @@ export var defaults = {
     errorHandler: function (err) {
         return typeof console !== "undefined" && console.warn(err);
     },
+    formatSecondsPrecision: 0,
     getWeek: function (givenDate) {
         var date = new Date(givenDate.getTime());
         date.setHours(0, 0, 0, 0);

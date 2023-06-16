@@ -30,7 +30,7 @@
     function rangePlugin(config) {
         if (config === void 0) { config = {}; }
         return function (fp) {
-            var dateFormat = "", secondInput, _secondInputFocused, _prevDates;
+            var dateFormat, secondInput, _secondInputFocused, _prevDates;
             var createSecondInput = function () {
                 if (config.input) {
                     secondInput =

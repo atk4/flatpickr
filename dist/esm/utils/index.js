@@ -1,6 +1,10 @@
 export var pad = function (number, length) {
     if (length === void 0) { length = 2; }
-    return ("000" + number).slice(length * -1);
+    var res = "" + number;
+    while (res.length < length) {
+        res = "0" + res;
+    }
+    return res;
 };
 export var int = function (bool) { return (bool === true ? 1 : 0); };
 export function debounce(fn, wait) {
