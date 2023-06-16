@@ -14,7 +14,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: bahmutov/npm-install@v1
-    - run: npm test
+    - run: npm run test
+    - run: npm run build
+    - name: Verify generated files are up to date
+      run: git add . -N && git diff --ignore-cr-at-eol --exit-code
 
   prettier:
     name: 'prettier'

@@ -2,5 +2,8 @@
 node_modules
 index.html
 coverage
-dist
+dist/*.d.ts
+dist/*/*.d.ts
+dist/*/*/*.d.ts
+*.bat
 *.tsbuildinfo
