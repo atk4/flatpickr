@@ -1667,6 +1667,18 @@
                     ? self.config.altFormat
                     : self.config.dateFormat);
             }
+            setTimeout(function () {
+                // timeout is needed for document.activeElement to be the element after blur
+                if (self.isOpen) {
+                    var activeElement = getClosestActiveElement();
+                    if (activeElement &&
+                        activeElement !== self.input &&
+                        activeElement !== self.altInput &&
+                        !isCalendarElem(activeElement)) {
+                        documentClick({ target: null });
+                    }
+                }
+            }, 0);
         }
         function onKeyDown(e) {
             // e.key                      e.keyCode

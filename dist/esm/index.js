@@ -1023,6 +1023,17 @@ function FlatpickrInstance(element, instanceConfig) {
                 ? self.config.altFormat
                 : self.config.dateFormat);
         }
+        setTimeout(function () {
+            if (self.isOpen) {
+                var activeElement = getClosestActiveElement();
+                if (activeElement &&
+                    activeElement !== self.input &&
+                    activeElement !== self.altInput &&
+                    !isCalendarElem(activeElement)) {
+                    documentClick({ target: null });
+                }
+            }
+        }, 0);
     }
     function onKeyDown(e) {
         var eventTarget = getEventTarget(e);
